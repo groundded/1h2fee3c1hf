@@ -1,0 +1,745 @@
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Vamp HUB | Closet " .. Fluent.Version,
+    SubTitle = "by IXverse",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true, -- The blur may be detectable, setting this to false disables blur entirely
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl -- Used when theres no MinimizeKeybind
+})
+
+--Fluent provides Lucide Icons https://lucide.dev/icons/ for the tabs, icons are optional
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "box" }),
+    Br = Window:AddTab({ Title = "Battle Royale", Icon = "crosshair" }),
+    Esp = Window:AddTab({ Title = "Chest ESP", Icon = "box" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
+
+local Options = Fluent.Options
+
+do
+    Tabs.Main:AddParagraph({
+        Title = "Main",
+        Content = ""
+    })
+
+
+
+-- Set initial Walkspeed value
+getgenv().Walkspeed = game:GetService("Players").LocalPlayer.Character.Humanoid.WalkSpeed
+getgenv().defaultWalkspeed = game:GetService("Players").LocalPlayer.Character.Humanoid.WalkSpeed
+
+-- Toggle for enabling/disabling the Walkspeed script
+local Toggle = Tabs.Main:AddToggle("WalkspeedToggle", {Title = "Toggle Walkspeed", Default = false})
+
+Toggle:OnChanged(function()
+    getgenv().loopW = Options.WalkspeedToggle.Value
+    print("Toggle changed:", Options.WalkspeedToggle.Value)
+    if not getgenv().loopW then
+        -- Reset to default Walkspeed when toggle is turned off
+        pcall(function()
+            game:GetService("Players").LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().defaultWalkspeed
+        end)
+    end
+end)
+
+Options.WalkspeedToggle:SetValue(false)
+
+-- Existing slider code with integrated WalkSpeed script
+local Slider = Tabs.Main:AddSlider("Slider", {
+    Title = "Walkspeed Optimizer",
+    Description = "Optimizes your Walkspeed",
+    Default = 26,
+    Min = 26,
+    Max = 110,
+    Rounding = 1,
+    Callback = function(Value)
+        if getgenv().loopW then
+            -- Adjust Walkspeed based on the slider value only if toggle is on
+            getgenv().Walkspeed = Value
+            pcall(function()
+                game:GetService("Players").LocalPlayer.Character.Humanoid.WalkSpeed = Value
+            end)
+        end
+    end
+})
+
+Slider:OnChanged(function(Value)
+    if getgenv().loopW then
+        -- Adjust Walkspeed based on the slider value only if toggle is on
+        getgenv().Walkspeed = Value
+        pcall(function()
+            game:GetService("Players").LocalPlayer.Character.Humanoid.WalkSpeed = Value
+        end)
+    end
+end)
+
+Slider:SetValue(26)
+
+-- WalkSpeed loop script
+getgenv().loopW = false
+game:GetService("RunService").Heartbeat:Connect(function()
+    if getgenv().loopW then
+        pcall(function()
+            game:GetService("Players").LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().Walkspeed
+        end)
+    end
+end)
+
+
+
+    Tabs.Main:AddButton({
+        Title = "JumpPower",
+        Description = "This button changes your jumppower to 100.",
+        Callback = function()
+            Window:Dialog({
+                Title = "Are you sure",
+                Content = "Then press the button",
+                Buttons = {
+                    {
+                        Title = "Confirm",
+                        Callback = function()
+                            -- Insert your script here
+                            local Players = game:GetService("Players")
+                            local RunService = game:GetService("RunService")
+                            local player = Players.LocalPlayer
+    
+                            local jumpPowerValue = 100 -- Desired jump power
+                            local keepUpdating = true
+    
+                            local function updateJumpPower()
+                                local character = player.Character
+                                if character then
+                                    local humanoid = character:FindFirstChildOfClass("Humanoid")
+                                    if humanoid then
+                                        humanoid.JumpPower = jumpPowerValue
+                                    end
+                                end
+                            end
+    
+                            local function startUpdatingJumpPower()
+                                keepUpdating = true
+                                spawn(function()
+                                    while keepUpdating do
+                                        updateJumpPower()
+                                        wait(0.00001) -- Refresh every 0.5 milliseconds
+                                    end
+                                end)
+                            end
+    
+                            local function stopUpdatingJumpPower()
+                                keepUpdating = false
+                            end
+    
+                            -- Update the jump power whenever the character spawns
+                            player.CharacterAdded:Connect(function(character)
+                                character:WaitForChild("Humanoid")
+                                updateJumpPower()
+                                startUpdatingJumpPower()
+                            end)
+    
+                            -- Stop updating the jump power when the character is removed
+                            player.CharacterRemoving:Connect(function()
+                                stopUpdatingJumpPower()
+                            end)
+    
+                            -- Continuously update the jump power using Heartbeat
+                            RunService.Heartbeat:Connect(function()
+                                if not player.Character or not player.Character:FindFirstChild("Humanoid") then
+                                    stopUpdatingJumpPower()
+                                end
+                            end)
+    
+                            -- Start updating immediately if the character already exists
+                            if player.Character then
+                                updateJumpPower()
+                                startUpdatingJumpPower()
+                            end
+                        end
+                    },
+                    {
+                        Title = "Cancel",
+                        Callback = function()
+                            print("Cancelled the dialog.")
+                        end
+                    }
+                }
+            })
+        end
+    })
+    
+
+    
+    Tabs.Br:AddParagraph({
+        Title = "↓ Useful ↓",
+        Content = ""
+    })
+
+
+    
+Tabs.Br:AddButton({
+    Title = "Player ESP",
+    Description = "This button unveils all players to your keen sight, should you dare to pierce through shadows.",
+    Callback = function()
+        Window:Dialog({
+            Title = "Are you sure",
+            Content = "Then press the button",
+            Buttons = {
+                {
+                    Title = "Confirm",
+                    Callback = function()
+                        -- Preview: https://cdn.discordapp.com/attachments/796378086446333984/818089455897542687/unknown.png
+                        -- Made by Blissful#4992
+                        local Settings = {
+                            Box_Color = Color3.fromRGB(255, 0, 0),
+                            Tracer_Color = Color3.fromRGB(255, 0, 0),
+                            Tracer_Thickness = 1,
+                            Box_Thickness = 1,
+                            Tracer_Origin = "Bottom", -- Middle or Bottom if FollowMouse is on this won't matter...
+                            Tracer_FollowMouse = false,
+                            Tracers = true
+                        }
+                        local Team_Check = {
+                            TeamCheck = false, -- if TeamColor is on this won't matter...
+                            Green = Color3.fromRGB(255, 0, 0),
+                            Red = Color3.fromRGB(255, 0, 0)
+                        }
+                        local TeamColor = true
+
+                        --// SEPARATION
+                        local player = game:GetService("Players").LocalPlayer
+                        local camera = game:GetService("Workspace").CurrentCamera
+                        local mouse = player:GetMouse()
+
+                        local function NewQuad(thickness, color)
+                            local quad = Drawing.new("Quad")
+                            quad.Visible = false
+                            quad.PointA = Vector2.new(0,0)
+                            quad.PointB = Vector2.new(0,0)
+                            quad.PointC = Vector2.new(0,0)
+                            quad.PointD = Vector2.new(0,0)
+                            quad.Color = color
+                            quad.Filled = false
+                            quad.Thickness = thickness
+                            quad.Transparency = 1
+                            return quad
+                        end
+
+                        local function NewLine(thickness, color)
+                            local line = Drawing.new("Line")
+                            line.Visible = false
+                            line.From = Vector2.new(0, 0)
+                            line.To = Vector2.new(0, 0)
+                            line.Color = color 
+                            line.Thickness = thickness
+                            line.Transparency = 1
+                            return line
+                        end
+
+                        local function Visibility(state, lib)
+                            for u, x in pairs(lib) do
+                                x.Visible = state
+                            end
+                        end
+
+                        local function ToColor3(col) --Function to convert, just cuz c;
+                            local r = col.r --Red value
+                            local g = col.g --Green value
+                            local b = col.b --Blue value
+                            return Color3.new(r,g,b); --Color3 datatype, made of the RGB inputs
+                        end
+
+                        local black = Color3.fromRGB(0, 0 ,0)
+                        local function ESP(plr)
+                            local library = {
+                                --//Tracer and Black Tracer(black border)
+                                blacktracer = NewLine(Settings.Tracer_Thickness*2, black),
+                                tracer = NewLine(Settings.Tracer_Thickness, Settings.Tracer_Color),
+                                --//Box and Black Box(black border)
+                                black = NewQuad(Settings.Box_Thickness*2, black),
+                                box = NewQuad(Settings.Box_Thickness, Settings.Box_Color),
+                                --//Bar and Green Health Bar (part that moves up/down)
+                                healthbar = NewLine(3, black),
+                                greenhealth = NewLine(1.5, black)
+                            }
+
+                            local function Colorize(color)
+                                for u, x in pairs(library) do
+                                    if x ~= library.healthbar and x ~= library.greenhealth and x ~= library.blacktracer and x ~= library.black then
+                                        x.Color = color
+                                    end
+                                end
+                            end
+
+                            local function Updater()
+                                local connection
+                                connection = game:GetService("RunService").RenderStepped:Connect(function()
+                                    if plr.Character ~= nil and plr.Character:FindFirstChild("Humanoid") ~= nil and plr.Character:FindFirstChild("HumanoidRootPart") ~= nil and plr.Character.Humanoid.Health > 0 and plr.Character:FindFirstChild("Head") ~= nil then
+                                        local HumPos, OnScreen = camera:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
+                                        if OnScreen then
+                                            local head = camera:WorldToViewportPoint(plr.Character.Head.Position)
+                                            local DistanceY = math.clamp((Vector2.new(head.X, head.Y) - Vector2.new(HumPos.X, HumPos.Y)).magnitude, 2, math.huge)
+                                            
+                                            local function Size(item)
+                                                item.PointA = Vector2.new(HumPos.X + DistanceY, HumPos.Y - DistanceY*2)
+                                                item.PointB = Vector2.new(HumPos.X - DistanceY, HumPos.Y - DistanceY*2)
+                                                item.PointC = Vector2.new(HumPos.X - DistanceY, HumPos.Y + DistanceY*2)
+                                                item.PointD = Vector2.new(HumPos.X + DistanceY, HumPos.Y + DistanceY*2)
+                                            end
+                                            Size(library.box)
+                                            Size(library.black)
+
+                                            --//Tracer 
+                                            if Settings.Tracers then
+                                                if Settings.Tracer_Origin == "Middle" then
+                                                    library.tracer.From = camera.ViewportSize*0.5
+                                                    library.blacktracer.From = camera.ViewportSize*0.5
+                                                elseif Settings.Tracer_Origin == "Bottom" then
+                                                    library.tracer.From = Vector2.new(camera.ViewportSize.X*0.5, camera.ViewportSize.Y) 
+                                                    library.blacktracer.From = Vector2.new(camera.ViewportSize.X*0.5, camera.ViewportSize.Y)
+                                                end
+                                                if Settings.Tracer_FollowMouse then
+                                                    library.tracer.From = Vector2.new(mouse.X, mouse.Y+36)
+                                                    library.blacktracer.From = Vector2.new(mouse.X, mouse.Y+36)
+                                                end
+                                                library.tracer.To = Vector2.new(HumPos.X, HumPos.Y + DistanceY*2)
+                                                library.blacktracer.To = Vector2.new(HumPos.X, HumPos.Y + DistanceY*2)
+                                            else 
+                                                library.tracer.From = Vector2.new(0, 0)
+                                                library.blacktracer.From = Vector2.new(0, 0)
+                                                library.tracer.To = Vector2.new(0, 0)
+                                                library.blacktracer.To = Vector2.new(0, 02)
+                                            end
+
+                                            --// Health Bar
+                                            local d = (Vector2.new(HumPos.X - DistanceY, HumPos.Y - DistanceY*2) - Vector2.new(HumPos.X - DistanceY, HumPos.Y + DistanceY*2)).magnitude 
+                                            local healthoffset = plr.Character.Humanoid.Health/plr.Character.Humanoid.MaxHealth * d
+
+                                            library.greenhealth.From = Vector2.new(HumPos.X - DistanceY - 4, HumPos.Y + DistanceY*2)
+                                            library.greenhealth.To = Vector2.new(HumPos.X - DistanceY - 4, HumPos.Y + DistanceY*2 - healthoffset)
+
+                                            library.healthbar.From = Vector2.new(HumPos.X - DistanceY - 4, HumPos.Y + DistanceY*2)
+                                            library.healthbar.To = Vector2.new(HumPos.X - DistanceY - 4, HumPos.Y - DistanceY*2)
+
+                                            local green = Color3.fromRGB(255, 0, 0)
+                                            local red = Color3.fromRGB(255, 0, 0)
+
+                                            library.greenhealth.Color = red:lerp(green, plr.Character.Humanoid.Health/plr.Character.Humanoid.MaxHealth);
+
+                                            if Team_Check.TeamCheck then
+                                                if plr.TeamColor == player.TeamColor then
+                                                    Colorize(Team_Check.Green)
+                                                else 
+                                                    Colorize(Team_Check.Red)
+                                                end
+                                            else 
+                                                library.tracer.Color = Settings.Tracer_Color
+                                                library.box.Color = Settings.Box_Color
+                                            end
+                                            if TeamColor == true then
+                                                Colorize(plr.TeamColor.Color)
+                                            end
+                                            Visibility(true, library)
+                                        else 
+                                            Visibility(false, library)
+                                        end
+                                    else 
+                                        Visibility(false, library)
+                                        if game.Players:FindFirstChild(plr.Name) == nil then
+                                            connection:Disconnect()
+                                        end
+                                    end
+                                end)
+                            end
+                            coroutine.wrap(Updater)()
+                        end
+
+                        for i, v in pairs(game:GetService("Players"):GetPlayers()) do
+                            if v.Name ~= player.Name then
+                                coroutine.wrap(ESP)(v)
+                            end
+                        end
+
+                        game.Players.PlayerAdded:Connect(function(newplr)
+                            if newplr.Name ~= player.Name then
+                                coroutine.wrap(ESP)(newplr)
+                            end
+                        end)
+                    end
+                },
+                {
+                    Title = "Cancel",
+                    Callback = function()
+                        print("Cancelled the dialog.")
+                    end
+                }
+            }
+        })
+    end
+})
+
+
+    
+    Tabs.Br:AddButton({
+        Title = "No Fall DMG",
+        Description = "This button eradicates the damage from your descent, should you dare to defy gravity.",
+        Callback = function()
+            Window:Dialog({
+                Title = "Are you sure",
+                Content = "Then press the button",
+                Buttons = {
+                    {
+                        Title = "Confirm",
+                        Callback = function()
+                            game:GetService("Players").LocalPlayer.Character.FallDamage:Destroy()
+                        end
+                    },
+                    {
+                        Title = "Cancel",
+                        Callback = function()
+                            print("Cancelled the dialog.")
+                        end
+                    }
+                }
+            })
+        end
+    })
+
+    
+
+Tabs.Br:AddButton({
+    Title = "infinite jump (OG)",
+    Description = "Jump infinite",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+        local userInputService = game:GetService("UserInputService")
+
+        local jumpVelocity = Vector3.new(0, 75, 0) -- Adjust the Y value for jump height
+
+        userInputService.InputBegan:Connect(function(input, gameProcessed)
+            if gameProcessed then return end
+
+            if input.KeyCode == Enum.KeyCode.Space then
+                humanoidRootPart.Velocity = jumpVelocity
+            end
+        end)
+    end
+})
+    
+    
+
+Tabs.Esp:AddButton({
+    Title = "Common",
+    Description = "common chest esp",
+    Callback = function()
+        local comparingString = "6c96ed9f-add3-40f5-9445-fdca8924f4f0"
+        local comparingLength = #comparingString
+        local rarityColor = Color3.new(108/255, 88/255, 75/255)
+
+        local function updateHighlight()
+            for _, child in pairs(workspace.Effects:GetChildren()) do
+                if not child:IsA("Model") then continue end
+                if #child.Name ~= comparingLength then continue end
+                if child:FindFirstChild("Highlight") then child.Highlight:Destroy() end
+                local weld = child.Top:FindFirstChildWhichIsA("Weld", true)
+                if not weld then continue end
+                if weld.Parent.Color ~= rarityColor then continue end
+                
+                local highlight = child:FindFirstChild("Highlight")
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Parent = child
+                end
+                
+                local gui = child:FindFirstChild("ESP")
+                if not gui then
+                    gui = Instance.new("BillboardGui")
+                    gui.Name = "ESP"
+                    gui.Adornee = child
+                    gui.Size = UDim2.new(0, 200, 0, 50)
+                    gui.StudsOffset = Vector3.new(0, 2, 0)
+                    gui.AlwaysOnTop = true
+                    
+                    local textLabel = Instance.new("TextLabel")
+                    textLabel.Name = "ESPText"
+                    textLabel.Font = Enum.Font.SourceSans
+                    textLabel.TextSize = 24
+                    textLabel.TextColor3 = Color3.new(1, 1, 1)
+                    textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+                    textLabel.TextStrokeTransparency = 0
+                    textLabel.TextXAlignment = Enum.TextXAlignment.Center
+                    textLabel.Size = UDim2.new(1, 0, 1, 0)
+                    textLabel.BackgroundTransparency = 1
+                    textLabel.Text = "Common Chest"
+                    textLabel.Parent = gui
+                    
+                    gui.Parent = child
+                end
+            end
+        end
+
+        -- Function to update every 0.5 seconds
+        local function updateEveryHalfSecond()
+            updateHighlight()
+            wait(0.4)
+            updateEveryHalfSecond()
+        end
+
+        -- Start updating
+        updateEveryHalfSecond()
+    end
+})
+
+
+
+Tabs.Esp:AddButton({
+    Title = "Rare",
+    Description = "rare chest esp",
+    Callback = function()
+        local comparingString = "6c96ed9f-add3-40f5-9445-fdca8924f4f0"
+        local comparingLength = #comparingString
+        local rarityColor = Color3.fromRGB(150, 150, 152)
+
+        local function refreshESP()
+            for _, child in pairs(workspace.Effects:GetChildren()) do
+                if not child:IsA("Model") then continue end
+                if #child.Name ~= comparingLength then continue end
+                if child:FindFirstChild("Highlight") then child.Highlight:Destroy() end
+                local weld = child.Top:FindFirstChildWhichIsA("Weld", true)
+                if not weld then continue end
+                if weld.Parent.Color ~= rarityColor then continue end
+                
+                local highlight = child:FindFirstChild("Highlight")
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Parent = child
+                end
+                
+                local gui = child:FindFirstChild("ESP") or Instance.new("BillboardGui")
+                gui.Name = "ESP"
+                gui.Adornee = child
+                gui.Size = UDim2.new(0, 200, 0, 50)
+                gui.StudsOffset = Vector3.new(0, 2, 0)
+                gui.AlwaysOnTop = true
+                
+                local textLabel = gui:FindFirstChild("ESPText") or Instance.new("TextLabel")
+                textLabel.Name = "ESPText"
+                textLabel.Font = Enum.Font.SourceSans
+                textLabel.TextSize = 24
+                textLabel.TextColor3 = Color3.new(1, 1, 1)
+                textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+                textLabel.TextStrokeTransparency = 0
+                textLabel.TextXAlignment = Enum.TextXAlignment.Center
+                textLabel.Size = UDim2.new(1, 0, 1, 0)
+                textLabel.BackgroundTransparency = 1
+                textLabel.Text = "Rare chest"
+                textLabel.Parent = gui
+                
+                gui.Parent = child
+            end
+        end
+
+        -- Function to update every 0.5 seconds
+        local function updateEveryHalfSecond()
+            refreshESP()
+            wait(0.5)
+            updateEveryHalfSecond()
+        end
+
+        -- Start updating
+        updateEveryHalfSecond()
+    end
+})
+
+
+
+Tabs.Esp:AddButton({
+    Title = "Legendary",
+    Description = "legendary chest esp",
+    Callback = function()
+        local comparingString = "6c96ed9f-add3-40f5-9445-fdca8924f4f0"
+        local comparingLength = #comparingString
+        local rarityColor = Color3.fromRGB(255, 208, 204)
+
+        local function refreshESP()
+            for _, child in pairs(workspace.Effects:GetChildren()) do
+                if not child:IsA("Model") then continue end
+                if #child.Name ~= comparingLength then continue end
+                if child:FindFirstChild("Highlight") then child.Highlight:Destroy() end
+                local weld = child.Top:FindFirstChildWhichIsA("Weld", true)
+                if not weld then continue end
+                if weld.Parent.Color ~= rarityColor then continue end
+                
+                local highlight = child:FindFirstChild("Highlight")
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Parent = child
+                end
+                
+                local gui = child:FindFirstChild("ESP") or Instance.new("BillboardGui")
+                gui.Name = "ESP"
+                gui.Adornee = child
+                gui.Size = UDim2.new(0, 200, 0, 50)
+                gui.StudsOffset = Vector3.new(0, 2, 0)
+                gui.AlwaysOnTop = true
+                
+                local textLabel = gui:FindFirstChild("ESPText") or Instance.new("TextLabel")
+                textLabel.Name = "ESPText"
+                textLabel.Font = Enum.Font.SourceSans
+                textLabel.TextSize = 24
+                textLabel.TextColor3 = Color3.new(1, 1, 1)
+                textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+                textLabel.TextStrokeTransparency = 0
+                textLabel.TextXAlignment = Enum.TextXAlignment.Center
+                textLabel.Size = UDim2.new(1, 0, 1, 0)
+                textLabel.BackgroundTransparency = 1
+                textLabel.Text = "Legendary chest"
+                textLabel.Parent = gui
+                
+                gui.Parent = child
+            end
+        end
+
+        -- Function to update every 0.5 seconds
+        local function updateEveryHalfSecond()
+            refreshESP()
+            wait(0.4)
+            updateEveryHalfSecond()
+        end
+
+        -- Start updating
+        updateEveryHalfSecond()
+    end
+})
+
+
+
+Tabs.Esp:AddButton({
+    Title = "Mythical",
+    Description = "mythical chest esp",
+    Callback = function()
+        local comparingString = "6c96ed9f-add3-40f5-9445-fdca8924f4f0"
+        local comparingLength = #comparingString
+        local rarityColor = Color3.fromRGB(79, 29, 172)
+
+        local function refreshESP()
+            for _, child in pairs(workspace.Effects:GetChildren()) do
+                if not child:IsA("Model") then continue end
+                if #child.Name ~= comparingLength then continue end
+                if child:FindFirstChild("Highlight") then child.Highlight:Destroy() end
+                local weld = child.Top:FindFirstChildWhichIsA("Weld", true)
+                if not weld then continue end
+                if weld.Parent.Color ~= rarityColor then continue end
+                
+                local highlight = child:FindFirstChild("Highlight")
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Parent = child
+                end
+                
+                local gui = child:FindFirstChild("ESP") or Instance.new("BillboardGui")
+                gui.Name = "ESP"
+                gui.Adornee = child
+                gui.Size = UDim2.new(0, 200, 0, 50)
+                gui.StudsOffset = Vector3.new(0, 2, 0)
+                gui.AlwaysOnTop = true
+                
+                local textLabel = gui:FindFirstChild("ESPText") or Instance.new("TextLabel")
+                textLabel.Name = "ESPText"
+                textLabel.Font = Enum.Font.SourceSans
+                textLabel.TextSize = 24
+                textLabel.TextColor3 = Color3.new(1, 1, 1)
+                textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+                textLabel.TextStrokeTransparency = 0
+                textLabel.TextXAlignment = Enum.TextXAlignment.Center
+                textLabel.Size = UDim2.new(1, 0, 1, 0)
+                textLabel.BackgroundTransparency = 1
+                textLabel.Text = "Mythical chest"
+                textLabel.Parent = gui
+                
+                gui.Parent = child
+            end
+        end
+
+        -- Function to update every 0.5 seconds
+        local function updateEveryHalfSecond()
+            refreshESP()
+            wait(0.4)
+            updateEveryHalfSecond()
+        end
+
+        -- Start updating
+        updateEveryHalfSecond()
+    end
+})
+
+
+
+    
+
+local ScreenGui = Instance.new("ScreenGui")
+local TextLabel = Instance.new("TextLabel")
+
+ScreenGui.Name = "CustomTextGui"
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
+
+TextLabel.Parent = ScreenGui
+TextLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+TextLabel.BackgroundTransparency = 0.5
+TextLabel.BorderSizePixel = 0
+TextLabel.Position = UDim2.new(0, 10, 1, -50) -- Adjusts position to bottom-left with some padding
+TextLabel.Size = UDim2.new(0, 200, 0, 50)
+TextLabel.Font = Enum.Font.SourceSans
+TextLabel.Text = ".gg/GkVUYdM7uG"
+TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextLabel.TextScaled = true
+TextLabel.TextStrokeTransparency = 0.8
+TextLabel.TextWrapped = true
+
+end
+
+
+-- Addons:
+-- SaveManager (Allows you to have a configuration system)
+-- InterfaceManager (Allows you to have a interface managment system)
+
+-- Hand the library over to our managers
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+
+-- Ignore keys that are used by ThemeManager.
+-- (we dont want configs to save themes, do we?)
+SaveManager:IgnoreThemeSettings()
+
+-- You can add indexes of elements the save manager should ignore
+SaveManager:SetIgnoreIndexes({})
+
+-- use case for doing it this way:
+-- a script hub could have themes in a global folder
+-- and game configs in a separate folder per game
+InterfaceManager:SetFolder("FluentScriptHub")
+SaveManager:SetFolder("FluentScriptHub/specific-game")
+
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+
+Window:SelectTab(1)
+
+Fluent:Notify({
+    Title = "Fluent",
+    Content = "The script has been loaded.",
+    Duration = 8
+})
+
+-- You can use the SaveManager:LoadAutoloadConfig() to load a config
+-- which has been marked to be one that auto loads!
+SaveManager:LoadAutoloadConfig()
