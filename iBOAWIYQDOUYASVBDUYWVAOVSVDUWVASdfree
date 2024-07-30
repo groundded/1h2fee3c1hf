@@ -391,8 +391,75 @@ Tabs.Br:AddButton({
         end)
     end
 })
-    
-    
+
+
+
+Tabs.Br:AddButton({
+    Title = "NoFog",
+    Description = "This button banishes the fog from your realm, leaving only the eerie glow of the night.",
+    Callback = function()
+        local Lighting = game:GetService("Lighting")
+
+        Lighting.FogEnd = 100000
+
+        Lighting:GetPropertyChangedSignal("FogEnd"):Connect(function()
+            Lighting.FogEnd = 100000
+        end)
+
+        for _, v in ipairs(Lighting:GetDescendants()) do
+            if v:IsA("Atmosphere") then
+                v.Density = 0
+
+                v:GetPropertyChangedSignal("Density"):Connect(function()
+                    v.Density = 0
+                end)
+            end
+        end
+    end
+})
+
+
+
+Tabs.Br:AddButton({
+    Title = "FullBright",
+    Description = "this will burn you, because you are a vampire >.<",
+    Callback = function()
+        Window:Dialog({
+            Title = "Are you sure?",
+            Content = "Pressing this button will activate FullBright. Are you sure you want to proceed?",
+            Buttons = {
+                {
+                    Title = "Confirm",
+                    Callback = function()
+                        -- Fullbright Script for Roblox
+                        local Lighting = game:GetService("Lighting")
+
+                        -- Adjust these values as needed for your brightness preference
+                        local Brightness = 2
+                        local OutdoorAmbient = Color3.new(1, 1, 1)
+                        local Ambient = Color3.new(1, 1, 1)
+
+                        -- Set brightness
+                        Lighting.GlobalShadows = false
+                        Lighting.Brightness = Brightness
+                        Lighting.OutdoorAmbient = OutdoorAmbient
+                        Lighting.Ambient = Ambient
+
+                        print("FullBright activated.")
+                    end
+                },
+                {
+                    Title = "Cancel",
+                    Callback = function()
+                        print("Cancelled the dialog.")
+                    end
+                }
+            }
+        })
+    end
+})
+
+
 
 Tabs.Esp:AddButton({
     Title = "Common",
